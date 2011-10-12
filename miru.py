@@ -1,10 +1,11 @@
 #!/usr/bin/env python2
 
 import urwid
-from argparse import ArgumentParser
+import os.path
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, DateTime, Integer, String, Enum, create_engine, and_
+from sqlalchemy import Column, DateTime, Integer, String, Enum, create_engine, and_, func
 
 class MainWindow(object):
 	palette = [
@@ -93,12 +94,20 @@ class SeriesWalker(urwid.SimpleListWalker):
 	def __init__(self, session, filter):
 		self.session = session
 		self.filter = filter
-		self.total_seen_episodes = 0 # FIXME
 		query = session.query(Series).filter(filter).order_by(Series.name)
-		urwid.SimpleListWalker.__init__(self, [urwid.AttrMap(w, None, "reveal focus") for w in map(self.__create_entry, query)])
+		urwid.SimpleListWalker.__init__(self, [urwid.AttrMap(w, None, "reveal focus") for w in map(self.create_entry, query)])
 		
-	def __create_entry(self, series):
-		return SeriesEntry(self.session, series)
+	def create_entry(self, series):
+		entry = SeriesEntry(self.session, series) 
+		urwid.connect_signal(entry, "series_changed", self.refresh) # This doesn't seem right
+		return entry
+
+	@property
+	def total_seen_episodes(self):
+		return self.session.query(func.sum(Series.seen)).filter(self.filter).one()[0] or 0
+
+	def refresh(self):
+		pass
 
 class SeriesEntry(urwid.WidgetWrap):
 	# Not sure if it's a good idea to spread references to session and Series objects around like this...
@@ -118,14 +127,14 @@ class SeriesEntry(urwid.WidgetWrap):
 		return True
 	
 	def keypress(self, size, key):
-		if key == "i":
-			self.series.add_view()
+		if key in ("i", "d"):
+			if key == "i":
+				self.series.add_view()
+			else:
+				self.series.remove_view()
 			self.session.commit() # Maybe we should commit only after some time
 			self.refresh()
-		elif key == "d":
-			self.series.remove_view()
-			self.session.commit()
-			self.refresh()
+			urwid.emit_signal(self, "series_changed")
 		elif key == "s":
 			pass # Set seen to an arbitary number
 		elif key == "x":
@@ -137,6 +146,9 @@ class SeriesEntry(urwid.WidgetWrap):
 		self.name.set_text(self.series.name)
 		self.seen.set_text(unicode(self.series.seen))
 		self.episodes.set_text(unicode(self.series.episodes))
+
+# This is probably a wrong place to register these
+urwid.register_signal(SeriesEntry, ["series_changed"])
 
 class VimStyleListBox(urwid.ListBox):
 	""" ListBox that changes focus with j and k keys """
@@ -173,14 +185,28 @@ class Series(Base):
 			self.seen -= 1
 
 def parse_args():
-	from os.path import expanduser
-	parser = ArgumentParser("Tool for maintaining a log of seen tv-series' episodes.")
+	from textwrap import dedent
+	keys = dedent("""
+		Keys
+		h: Move to a view in left
+		l: Move to a view in right
+		j: Focus next item
+		k: Focus previous item
+		i: Increment seen episodes count for selected series
+		d: Decrement seen episodes count for selected series
+		s: Set seen episodes count to an arbitary number
+		n: Add new series
+		x: Delete selected series
+	""")
+	parser = ArgumentParser("Tool for maintaining a log of seen tv-series' episodes.",
+			epilog=keys,
+			formatter_class=RawDescriptionHelpFormatter)
 	parser.add_argument("-m", "--memory", action="store_true", help="Use temporary in-memory database")
-	parser.add_argument("-d", "--database", default=expanduser("~/.episodes"), help="Path to a database")
+	parser.add_argument("-d", "--database", default=os.path.expanduser("~/.episodes"), help="Path to a database")
 	return parser.parse_args()
 
 def connect_database(path, memory=False):
-	return create_engine("sqlite:///%s" % (":memory:" if memory else path))
+	return create_engine("sqlite:///%s" % (":memory:" if memory else os.path.abspath(path)))
 
 def main():
 	args = parse_args()
