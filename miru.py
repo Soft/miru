@@ -20,54 +20,67 @@ class MainWindow(object):
 	frame = None
 
 	def __init__(self, session):
-		self.lists = [
-				(("Currently Watching", "current"),
-					SeriesTable(SeriesWalker(session, and_(Series.seen < Series.episodes, Series.status == None)))),
-				(("Completed", "completed"),
-					SeriesTable(SeriesWalker(session, Series.seen == Series.episodes))),
-				(("On Hold", "hold"),
-					SeriesTable(SeriesWalker(session, Series.status == "hold"))),
-				(("Dropped", "dropped"),
-					SeriesTable(SeriesWalker(session, Series.status == "dropped"))),
-				(("Plan to Watch", "planned"),
-					SeriesTable(SeriesWalker(session, Series.status == "planned")))
+		self.views = [
+				View("Currently Watching", "current", session, and_(Series.seen < Series.episodes, Series.status == None)),
+				View("Completed", "completed", session, Series.seen == Series.episodes),
+				View("On Hold", "hold", session, Series.status == "hold"),
+				View("Dropped", "dropped", session, Series.status == "dropped"),
+				View("Plan to Watch", "planned", session, Series.status == "planned"),
 			]
 		self.current = 0
-		self.display_list(self.current)
+		self.display_view(self.current)
 	
 	def unhandled_input(self, key):
 		if key in ("q", "Q"):
 			raise urwid.ExitMainLoop()
 		elif key == "h":
-			self.display_list(self.current - 1 if (self.current - 1) >= 0 else len(self.lists) - 1)
+			self.display_view(self.current - 1 if (self.current - 1) >= 0 else len(self.views) - 1)
 		elif key == "l":
-			self.display_list(self.current + 1 if (self.current + 1) <= len(self.lists) - 1 else 0)
+			self.display_view(self.current + 1 if (self.current + 1) <= len(self.views) - 1 else 0)
 		elif key == "n":
 			pass # Add new series to the current view
 	
-	def display_list(self, index):
+	def display_view(self, index):
 		self.current = index
-		header = urwid.AttrWrap(urwid.Text(self.lists[index][0][0], "center"), self.lists[index][0][1])
-		body = urwid.AttrWrap(urwid.Pile([
-				("flow", urwid.Divider(u" ")),
-				self.lists[index][1]
-			], focus_item=1), "body")
-		footer = urwid.AttrWrap(
-				urwid.Text(u"Total of %d seen episodes" % self.lists[index][1].total_seen_episodes, "center"),
-				self.lists[index][0][1])
 		if self.frame:
-			self.frame.set_header(header)
-			self.frame.set_body(body)
-			self.frame.set_footer(footer)
+			self.frame.set_body(self.views[index])
 		else:
-			self.frame = urwid.Frame(body, header, footer)
+			self.frame = urwid.Frame(self.views[index])
 
 	def main(self):
 		self.loop = urwid.MainLoop(self.frame,
 				self.palette,
 				unhandled_input=self.unhandled_input)
 		self.loop.run()
+
+class View(urwid.WidgetWrap):
+	def __init__(self, title, attr, session, filter):
+		self.title = title
+		self.attr = attr
+		self.session = session
+		self.filter = filter
+		self.walker = SeriesWalker(session, filter)
+		urwid.connect_signal(self.walker, "series_changed", self.refresh)
+		self.table = SeriesTable(self.walker)
+		self.refresh()
 	
+	def refresh(self): # ugly
+		header = urwid.AttrWrap(urwid.Text(self.title, "center"), self.attr)
+		body = urwid.AttrWrap(urwid.Pile([
+				("flow", urwid.Divider(u" ")),
+				self.table
+			], focus_item=1), "body")
+		footer = urwid.AttrWrap(
+				urwid.Text(u"Total of %d seen episodes" % self.walker.total_seen_episodes, "center"),
+				"footer"
+			)
+		if not hasattr(self, "_wrapped_widget"): # ugly
+			urwid.WidgetWrap.__init__(self, urwid.Frame(body, header, footer))
+		else:
+			self._w.set_body(body)
+			self._w.set_header(header)
+			self._w.set_footer(footer)
+
 class DataTable(urwid.Pile):
 	def __init__(self, columns, walker):
 		self.list_box = VimStyleListBox(walker)
@@ -86,10 +99,6 @@ class SeriesTable(DataTable):
 				("weight", 0.2, urwid.Text(u"Total", align="right")),
 			], walker)
 	
-	@property
-	def total_seen_episodes(self): # This really should be in SeriesWalker
-		return self.walker.total_seen_episodes
-
 class SeriesWalker(urwid.SimpleListWalker):
 	def __init__(self, session, filter):
 		self.session = session
@@ -99,7 +108,7 @@ class SeriesWalker(urwid.SimpleListWalker):
 		
 	def create_entry(self, series):
 		entry = SeriesEntry(self.session, series) 
-		urwid.connect_signal(entry, "series_changed", self.refresh) # This doesn't seem right
+		urwid.connect_signal(entry, "series_changed", self.refresh)
 		return entry
 
 	@property
@@ -107,7 +116,9 @@ class SeriesWalker(urwid.SimpleListWalker):
 		return self.session.query(func.sum(Series.seen)).filter(self.filter).one()[0] or 0
 
 	def refresh(self):
-		pass
+		urwid.emit_signal(self, "series_changed")
+
+urwid.register_signal(SeriesWalker, ["series_changed"])
 
 class SeriesEntry(urwid.WidgetWrap):
 	# Not sure if it's a good idea to spread references to session and Series objects around like this...
