@@ -72,7 +72,7 @@ class View(urwid.WidgetWrap):
 			], focus_item=1), "body")
 		footer = urwid.AttrWrap(
 				urwid.Text(u"Total of %d seen episodes" % self.walker.total_seen_episodes, "center"),
-				"footer"
+				self.attr
 			)
 		if not hasattr(self, "_wrapped_widget"): # ugly
 			urwid.WidgetWrap.__init__(self, urwid.Frame(body, header, footer))
