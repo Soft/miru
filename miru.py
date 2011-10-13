@@ -63,7 +63,6 @@ class View(urwid.WidgetWrap):
 		self.session = session
 		self.filter = filter
 		self.walker = SeriesWalker(session, filter)
-		urwid.connect_signal(self.walker, "series_changed", self.refresh)
 		self.table = SeriesTable(self.walker)
 		self.refresh()
 	
@@ -151,7 +150,6 @@ class SeriesWalker(object):
 urwid.register_signal(SeriesWalker, ["series_changed"])
 
 class SeriesEntry(urwid.WidgetWrap):
-	# Not sure if it's a good idea to spread references to session and Series objects around like this...
 	def __init__(self, session, series):
 		self.session = session
 		self.series = series
@@ -174,7 +172,6 @@ class SeriesEntry(urwid.WidgetWrap):
 			else:
 				self.series.remove_view()
 			self.session.commit() # Maybe we should commit only after some time
-			self.refresh()
 			urwid.emit_signal(self, "series_changed")
 		elif key == "s":
 			pass # Set seen to an arbitary number
@@ -182,11 +179,6 @@ class SeriesEntry(urwid.WidgetWrap):
 			pass # Remove series
 		else:
 			return key
-	
-	def refresh(self):
-		self.name.set_text(self.series.name)
-		self.seen.set_text(unicode(self.series.seen))
-		self.episodes.set_text(unicode(self.series.episodes))
 
 urwid.register_signal(SeriesEntry, ["series_changed"])
 
