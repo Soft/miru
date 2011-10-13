@@ -7,6 +7,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, DateTime, Integer, String, Enum, create_engine, and_, func
 
+DEFAULT_DATABASE = os.path.expanduser("~/.miru.db")
+
 class MainWindow(object):
 	palette = [
 			("body", "default", "default"),
@@ -233,7 +235,7 @@ def parse_args():
 			epilog=keys,
 			formatter_class=RawDescriptionHelpFormatter)
 	parser.add_argument("-m", "--memory", action="store_true", help="Use temporary in-memory database")
-	parser.add_argument("-d", "--database", default=os.path.expanduser("~/.episodes"), help="Path to a database")
+	parser.add_argument("-d", "--database", default=DEFAULT_DATABASE, help="Path to a database")
 	return parser.parse_args()
 
 def connect_database(path, memory=False):
