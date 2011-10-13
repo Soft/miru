@@ -147,8 +147,6 @@ class SeriesWalker(object):
 	def total_seen_episodes(self):
 		return self.session.query(func.sum(Series.seen)).filter(self.filter).one()[0] or 0
 
-urwid.register_signal(SeriesWalker, ["series_changed"])
-
 class SeriesEntry(urwid.WidgetWrap):
 	def __init__(self, session, series):
 		self.session = session
