@@ -37,11 +37,14 @@ class MainWindow(object):
 			self.display_view(self.current - 1 if (self.current - 1) >= 0 else len(self.views) - 1)
 		elif key == "l":
 			self.display_view(self.current + 1 if (self.current + 1) <= len(self.views) - 1 else 0)
+		elif key in map(str, range(1, len(self.views) + 1)):
+			self.display_view(int(key) - 1)
 		elif key == "n":
 			pass # Add new series to the current view
 	
 	def display_view(self, index):
 		self.current = index
+		self.views[index].refresh()
 		if self.frame:
 			self.frame.set_body(self.views[index])
 		else:
@@ -64,7 +67,8 @@ class View(urwid.WidgetWrap):
 		self.table = SeriesTable(self.walker)
 		self.refresh()
 	
-	def refresh(self): # ugly
+	def refresh(self):
+		self.walker.reload()
 		header = urwid.AttrWrap(urwid.Text(self.title, "center"), self.attr)
 		body = urwid.AttrWrap(urwid.Pile([
 				("flow", urwid.Divider(u" ")),
@@ -80,7 +84,7 @@ class View(urwid.WidgetWrap):
 			self._w.set_body(body)
 			self._w.set_header(header)
 			self._w.set_footer(footer)
-
+	
 class DataTable(urwid.Pile):
 	def __init__(self, columns, walker):
 		self.list_box = VimStyleListBox(walker)
@@ -98,25 +102,51 @@ class SeriesTable(DataTable):
 				("weight", 0.2, urwid.Text(u"Seen", align="right")),
 				("weight", 0.2, urwid.Text(u"Total", align="right")),
 			], walker)
-	
-class SeriesWalker(urwid.SimpleListWalker):
+
+class SeriesWalker(object):
 	def __init__(self, session, filter):
 		self.session = session
 		self.filter = filter
-		query = session.query(Series).filter(filter).order_by(Series.name)
-		urwid.SimpleListWalker.__init__(self, [urwid.AttrMap(w, None, "reveal focus") for w in map(self.create_entry, query)])
-		
-	def create_entry(self, series):
+		self.focus = 0
+		self.reload()
+	
+	def reload(self):
+		self.data = self.session.query(Series).filter(self.filter).order_by(Series.name).all()
+		self.entries = [urwid.AttrMap(w, None, "reveal focus") for w in map(self._create_entry, self.data)]
+	
+	def _create_entry(self, series):
 		entry = SeriesEntry(self.session, series) 
-		urwid.connect_signal(entry, "series_changed", self.refresh)
+		urwid.connect_signal(entry, "series_changed", self.reload)
 		return entry
 
+	def _clamp_focus(self):
+		if self.focus >= len(self.entries):
+			self.focus = len(self.entries) - 1
+	
+	def get_focus(self):
+		if len(self.entries) == 0:
+			return (None, None)
+		self._clamp_focus()
+		return (self.entries[self.focus], self.focus)
+
+	def get_next(self, position):
+		next_position = position + 1
+		if len(self.entries) <= next_position:
+			return (None, None)
+		return (self.entries[next_position], next_position)
+
+	def get_prev(self, position):
+		prev_position = position - 1
+		if prev_position < 0:
+			return (None, None)
+		return self.entries[prev_position], prev_position
+
+	def set_focus(self, position):
+		self.focus = position
+	
 	@property
 	def total_seen_episodes(self):
 		return self.session.query(func.sum(Series.seen)).filter(self.filter).one()[0] or 0
-
-	def refresh(self):
-		urwid.emit_signal(self, "series_changed")
 
 urwid.register_signal(SeriesWalker, ["series_changed"])
 
@@ -158,7 +188,6 @@ class SeriesEntry(urwid.WidgetWrap):
 		self.seen.set_text(unicode(self.series.seen))
 		self.episodes.set_text(unicode(self.series.episodes))
 
-# This is probably a wrong place to register these
 urwid.register_signal(SeriesEntry, ["series_changed"])
 
 class VimStyleListBox(urwid.ListBox):
@@ -199,15 +228,16 @@ def parse_args():
 	from textwrap import dedent
 	keys = dedent("""
 		Keys
-		h: Move to a view in left
-		l: Move to a view in right
-		j: Focus next item
-		k: Focus previous item
-		i: Increment seen episodes count for selected series
-		d: Decrement seen episodes count for selected series
-		s: Set seen episodes count to an arbitary number
-		n: Add new series
-		x: Delete selected series
+		h\t: Move to a view in left
+		l\t: Move to a view in right
+		1-5\t: Move to a spesific view
+		j\t: Focus next item
+		k\t: Focus previous item
+		i\t: Increment seen episodes count for selected series
+		d\t: Decrement seen episodes count for selected series
+		s\t: Set seen episodes count to an arbitary number
+		n\t: Add new series
+		x\t: Delete selected series
 	""")
 	parser = ArgumentParser("Tool for maintaining a log of seen tv-series' episodes.",
 			epilog=keys,
