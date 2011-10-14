@@ -2,6 +2,7 @@
 
 import urwid
 import os.path
+import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -30,6 +31,7 @@ class MainWindow(object):
 				View("Plan to Watch", "planned", session, Series.status == "planned"),
 			]
 		self.current = 0
+		self.session = session
 		self.display_view(self.current)
 	
 	def unhandled_input(self, key):
@@ -42,15 +44,21 @@ class MainWindow(object):
 		elif key in map(str, range(1, len(self.views) + 1)):
 			self.display_view(int(key) - 1)
 		elif key == "n":
-			pass # Add new series to the current view
+			pass
+			#self.frame.set_body(AddSeriesDialog(self.frame, self.session))
 	
 	def display_view(self, index):
 		self.current = index
 		self.views[index].refresh()
+		self.set_terminal_title("Miru - %s" % self.views[index].title)
 		if self.frame:
 			self.frame.set_body(self.views[index])
 		else:
 			self.frame = urwid.Frame(self.views[index])
+
+	def set_terminal_title(self, title):
+		import sys
+		sys.stdout.write("\x1b]2;%s\x07" % title)
 
 	def main(self):
 		self.loop = urwid.MainLoop(self.frame,
@@ -183,7 +191,7 @@ class SeriesEntry(urwid.WidgetWrap):
 urwid.register_signal(SeriesEntry, ["series_changed"])
 
 class VimStyleListBox(urwid.ListBox):
-	""" ListBox that changes focus with j and k keys """
+	""" ListBox that changes focus with j and k keys and supports mouse wheel scrolling"""
 
 	def keypress(self, size, key):
 		if key == "k":
@@ -192,9 +200,30 @@ class VimStyleListBox(urwid.ListBox):
 			return self._keypress_down(size)
 		else:
 			return urwid.ListBox.keypress(self, size, key)
+	
+	def mouse_event(self, size, event, button, col, row, focus):
+		if button == 4: # Scroll wheel up
+			self._keypress_up(size)
+			return True
+		elif button == 5: # Scroll wheel down
+			self._keypress_down(size)
+			return True
+		else:
+			return False
+		
 
-class Dialog(urwid.WidgetWrap):
-	pass
+class AddSeriesDialog(urwid.WidgetWrap):
+	def __init__(self, background, session):
+		#content = urwid.LineBox(urwid.GridFlow(
+				#[urwid.Text("Hello")], 5, 1, 1, "center"
+			#), title="Add Series")
+		#urwid.WidgetWrap.__init__(self, urwid.Overlay(content,
+			#background, align="center", width=("relative", 50), valign="middle", height=("relative", 50)))
+		pass
+	
+	def add_series(name, seen, episodes, status=None):
+		self.session.add(Series(name=name, episodes=episodes, seen=seen, status=status))
+		self.session.commit()
 
 Base = declarative_base()
 
@@ -237,6 +266,7 @@ def parse_args():
 	parser.add_argument("-m", "--memory", action="store_true", help="Use temporary in-memory database")
 	parser.add_argument("-d", "--database", default=DEFAULT_DATABASE, help="Path to a database")
 	return parser.parse_args()
+
 
 def connect_database(path, memory=False):
 	return create_engine("sqlite:///%s" % (":memory:" if memory else os.path.abspath(path)))
