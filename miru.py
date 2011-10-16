@@ -158,6 +158,8 @@ class SeriesWalker(object):
 		return self.session.query(func.sum(Series.seen)).filter(self.filter).one()[0] or 0
 
 class SeriesEntry(urwid.WidgetWrap):
+	__marking_active = False
+
 	def __init__(self, session, series):
 		self.session = session
 		self.series = series
@@ -172,8 +174,25 @@ class SeriesEntry(urwid.WidgetWrap):
 	
 	def selectable(self):
 		return True
+
+	def handle_marking(self, key):
+		keys = {
+				"a": None, # mark as active
+				"h": "hold", # mark as on hold
+				"d": "dropped", # mark as dropped
+				"p": "planned" # mark as planned
+			}
+		self.__marking_active = False
+		if key in keys.keys():
+			self.series.status = keys[key]
+			self.session.commit()
+			urwid.emit_signal(self, "series_changed")
+		else:
+			return key
 	
 	def keypress(self, size, key):
+		if self.__marking_active:
+			return self.handle_marking(key)
 		if key in ("i", "d"):
 			if key == "i":
 				self.series.add_view()
@@ -181,6 +200,8 @@ class SeriesEntry(urwid.WidgetWrap):
 				self.series.remove_view()
 			self.session.commit() # Maybe we should commit only after some time
 			urwid.emit_signal(self, "series_changed")
+		elif key == "m":
+			self.__marking_active = True
 		elif key == "s":
 			pass # Set seen to an arbitary number
 		elif key == "x":
@@ -188,7 +209,7 @@ class SeriesEntry(urwid.WidgetWrap):
 		else:
 			return key
 
-urwid.register_signal(SeriesEntry, ["series_changed"])
+urwid.register_signal(SeriesEntry, ["series_changed", "marking_active"])
 
 class VimStyleListBox(urwid.ListBox):
 	""" ListBox that changes focus with j and k keys and supports mouse wheel scrolling"""
@@ -251,12 +272,16 @@ def parse_args():
 		Keys
 		h\t: Move to a view in left
 		l\t: Move to a view in right
-		1-5\t: Move to a spesific view
+		1..5\t: Move to a spesific view
 		j\t: Focus next item
 		k\t: Focus previous item
 		i\t: Increment seen episodes count for selected series
 		d\t: Decrement seen episodes count for selected series
 		s\t: Set seen episodes count to an arbitary number
+		m-a\t: Mark series as active
+		m-h\t: Mark series as on hold
+		m-d\t: Mark series as dropped
+		m-p\t: Mark series as planned
 		n\t: Add new series
 		x\t: Delete selected series
 	""")
