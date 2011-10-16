@@ -95,12 +95,14 @@ class View(urwid.WidgetWrap):
 		self.refresh()
 
 	def redraw_footer(self):
+		self._w.set_focus("body")
 		self.setup_footer()
 		self.refresh()
 	
 	def handle_delete(self, series):
 		prompt = Prompt(u"Do you really want to delete \"%s\" [y/N]?: " % series.name)
 		urwid.connect_signal(prompt, "input_received", self.delete_confirmation, series)
+		urwid.connect_signal(prompt, "input_cancelled", self.redraw_footer)
 		self.footer = urwid.AttrWrap(prompt, self.attr)
 		self._w.set_focus("footer")
 		self.refresh()
@@ -117,6 +119,7 @@ class View(urwid.WidgetWrap):
 	def handle_set_seen(self, series):
 		prompt = IntPrompt(u"Set number of seen episodes for \"%s\": " % series.name)
 		urwid.connect_signal(prompt, "input_received", self.set_seen_confirmation, series)
+		urwid.connect_signal(prompt, "input_cancelled", self.redraw_footer)
 		self.footer = urwid.AttrWrap(prompt, self.attr)
 		self._w.set_focus("footer")
 		self.refresh()
@@ -189,10 +192,9 @@ class SeriesWalker(object):
 	def _create_entry(self, series):
 		entry = SeriesEntry(self.session, series) 
 		urwid.connect_signal(entry, "series_changed", self.reload)
-		urwid.connect_signal(entry, "marking_activated", self.re_emit, "marking_activated")
-		urwid.connect_signal(entry, "marking_deactivated", self.re_emit, "marking_deactivated")
-		urwid.connect_signal(entry, "deletion_requested", self.re_emit, "deletion_requested")
-		urwid.connect_signal(entry, "setting_seen_requested", self.re_emit, "setting_seen_requested")
+		re_emit = ("marking_activated", "marking_deactivated", "deletion_requested", "setting_seen_requested")
+		for signal in re_emit:
+			urwid.connect_signal(entry, signal, self.re_emit, signal)
 		return entry
 
 	def _clamp_focus(self):
@@ -318,10 +320,12 @@ class Prompt(urwid.Edit):
 	def keypress(self, size, key):
 		if key == "enter":
 			urwid.emit_signal(self, "input_received", self.format(self.get_edit_text()))
+		elif key == "esc":
+			urwid.emit_signal(self, "input_cancelled")
 		else:
-			return urwid.Edit.keypress(self, size, key)
+			urwid.Edit.keypress(self, size, key)
 
-urwid.register_signal(Prompt, ["input_received"])
+urwid.register_signal(Prompt, ["input_received", "input_cancelled"])
 
 class IntPrompt(Prompt):
 	def format(self, string):
@@ -330,7 +334,7 @@ class IntPrompt(Prompt):
 	def valid_char(self, char):
 		return len(char) == 1 and char in "0123456789"
 
-urwid.register_signal(IntPrompt, ["input_received"]) # Do I really have to specify this
+urwid.register_signal(IntPrompt, ["input_received", "input_cancelled"]) # Do I really have to specify this
 
 class AddSeriesDialog(urwid.WidgetWrap):
 	def __init__(self, background, session):
