@@ -98,14 +98,17 @@ class View(urwid.WidgetWrap):
 		self._w.set_focus("body")
 		self.setup_footer()
 		self.refresh()
-	
-	def handle_delete(self, series):
-		prompt = Prompt(u"Do you really want to delete \"%s\" [y/N]?: " % series.name)
-		urwid.connect_signal(prompt, "input_received", self.delete_confirmation, series)
-		urwid.connect_signal(prompt, "input_cancelled", self.redraw_footer)
-		self.footer = urwid.AttrWrap(prompt, self.attr)
+
+	def show_input(self, widget, callback, *args):
+		urwid.connect_signal(widget, "input_received", callback, *args)
+		urwid.connect_signal(widget, "input_cancelled", self.redraw_footer)
+		self.footer = urwid.AttrWrap(widget, self.attr)
 		self._w.set_focus("footer")
 		self.refresh()
+	
+	def handle_delete(self, series):
+		self.show_input(Prompt(u"Do you really want to delete \"%s\" [y/N]?: " % series.name),
+				self.delete_confirmation, series)
 	
 	def delete_confirmation(self, text, series):
 		self._w.set_focus("body")
@@ -117,12 +120,8 @@ class View(urwid.WidgetWrap):
 			self.redraw_footer()
 	
 	def handle_set_seen(self, series):
-		prompt = IntPrompt(u"Set number of seen episodes for \"%s\": " % series.name)
-		urwid.connect_signal(prompt, "input_received", self.set_seen_confirmation, series)
-		urwid.connect_signal(prompt, "input_cancelled", self.redraw_footer)
-		self.footer = urwid.AttrWrap(prompt, self.attr)
-		self._w.set_focus("footer")
-		self.refresh()
+		self.show_input(IntPrompt(u"Set number of seen episodes for \"%s\": " % series.name),
+				self.set_seen_confirmation, series)
 	
 	def set_seen_confirmation(self, number, series):
 		self._w.set_focus("body")
