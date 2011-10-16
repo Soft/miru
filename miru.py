@@ -100,7 +100,10 @@ class View(urwid.WidgetWrap):
 		self.refresh()
 
 	def show_input(self, widget, callback, *args):
-		urwid.connect_signal(widget, "input_received", callback, *args)
+		def wrapper(*signal_args):
+			self._w.set_focus("body")
+			callback(*(signal_args + args))
+		urwid.connect_signal(widget, "input_received", wrapper)
 		urwid.connect_signal(widget, "input_cancelled", self.redraw_footer)
 		self.footer = urwid.AttrWrap(widget, self.attr)
 		self._w.set_focus("footer")
@@ -111,7 +114,6 @@ class View(urwid.WidgetWrap):
 				self.delete_confirmation, series)
 	
 	def delete_confirmation(self, text, series):
-		self._w.set_focus("body")
 		if text.lower() == u"y":
 			self.session.delete(series)
 			self.session.commit()
@@ -124,7 +126,6 @@ class View(urwid.WidgetWrap):
 				self.set_seen_confirmation, series)
 	
 	def set_seen_confirmation(self, number, series):
-		self._w.set_focus("body")
 		series.seen = number if number <= series.episodes else series.episodes
 		self.session.commit()
 		self.reload()
