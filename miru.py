@@ -74,8 +74,9 @@ class View(urwid.WidgetWrap):
 		self.session = session
 		self.filter = filter
 		self.walker = SeriesWalker(session, filter)
+		urwid.connect_signal(self.walker, "series_changed", self.redraw_footer)
 		urwid.connect_signal(self.walker, "marking_activated", self.marking_activated)
-		urwid.connect_signal(self.walker, "marking_deactivated", self.marking_deactivated)
+		urwid.connect_signal(self.walker, "marking_deactivated", self.redraw_footer)
 		self.table = SeriesTable(self.walker)
 		self.setup_widgets()
 		urwid.WidgetWrap.__init__(self, urwid.Frame(self.body, self.header, self.footer))
@@ -91,7 +92,7 @@ class View(urwid.WidgetWrap):
 			self.attr)
 		self.refresh()
 
-	def marking_deactivated(self):
+	def redraw_footer(self):
 		self.setup_footer()
 		self.refresh()
 	
@@ -152,6 +153,7 @@ class SeriesWalker(object):
 	def reload(self):
 		self.data = self.session.query(Series).filter(self.filter).order_by(Series.name).all()
 		self.entries = [urwid.AttrMap(w, None, "reveal focus") for w in map(self._create_entry, self.data)]
+		urwid.emit_signal(self, "series_changed")
 	
 	def _create_entry(self, series):
 		entry = SeriesEntry(self.session, series) 
@@ -192,7 +194,7 @@ class SeriesWalker(object):
 	def total_seen_episodes(self):
 		return self.session.query(func.sum(Series.seen)).filter(self.filter).one()[0] or 0
 
-urwid.register_signal(SeriesWalker, ["marking_activated", "marking_deactivated"])
+urwid.register_signal(SeriesWalker, ["series_changed", "marking_activated", "marking_deactivated"])
 
 class SeriesEntry(urwid.WidgetWrap):
 	__marking_active = False
