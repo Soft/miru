@@ -18,7 +18,8 @@ class MainWindow(object):
 			("completed", "white", "dark green"),
 			("hold", "white", "dark cyan"),
 			("dropped", "white", "dark gray"),
-			("planned", "white", "dark red")
+			("planned", "white", "dark red"),
+			("highlight", "black", "white")
 		]
 	frame = None
 
@@ -49,7 +50,7 @@ class MainWindow(object):
 	
 	def display_view(self, index):
 		self.current = index
-		self.views[index].refresh()
+		self.views[index].reload()
 		self.set_terminal_title("Miru - %s" % self.views[index].title)
 		if self.frame:
 			self.frame.set_body(self.views[index])
@@ -73,27 +74,56 @@ class View(urwid.WidgetWrap):
 		self.session = session
 		self.filter = filter
 		self.walker = SeriesWalker(session, filter)
+		urwid.connect_signal(self.walker, "marking_activated", self.marking_activated)
+		urwid.connect_signal(self.walker, "marking_deactivated", self.marking_deactivated)
 		self.table = SeriesTable(self.walker)
+		self.setup_widgets()
+		urwid.WidgetWrap.__init__(self, urwid.Frame(self.body, self.header, self.footer))
+		self.reload()
+	
+	def marking_activated(self):
+		self.footer = urwid.AttrWrap(
+			urwid.Text([("highlight", "Mark as:"), " ",
+				("highlight", "a"), "ctive, ",
+				"on ", ("highlight", "h"), "old, ",
+				("highlight", "d"), "ropped, ",
+				("highlight", "p"), "lanned"], "left"),
+			self.attr)
+		self.refresh()
+
+	def marking_deactivated(self):
+		self.setup_footer()
 		self.refresh()
 	
 	def refresh(self):
+		self._w.set_body(self.body)
+		self._w.set_header(self.header)
+		self._w.set_footer(self.footer)
+	
+	def reload(self):
 		self.walker.reload()
-		header = urwid.AttrWrap(urwid.Text(self.title, "center"), self.attr)
-		body = urwid.AttrWrap(urwid.Pile([
+		self.refresh()
+	
+	def setup_header(self):
+		self.header = urwid.AttrWrap(urwid.Text(self.title, "center"), self.attr)
+	
+	def setup_body(self):
+		self.body = urwid.AttrWrap(urwid.Pile([
 				("flow", urwid.Divider(u" ")),
 				self.table
 			], focus_item=1), "body")
-		footer = urwid.AttrWrap(
+	
+	def setup_footer(self):
+		self.footer = urwid.AttrWrap(
 				urwid.Text(u"Total of %d seen episodes" % self.walker.total_seen_episodes, "center"),
 				self.attr
 			)
-		if not hasattr(self, "_wrapped_widget"): # ugly
-			urwid.WidgetWrap.__init__(self, urwid.Frame(body, header, footer))
-		else:
-			self._w.set_body(body)
-			self._w.set_header(header)
-			self._w.set_footer(footer)
 	
+	def setup_widgets(self):
+		self.setup_header()
+		self.setup_body()
+		self.setup_footer()
+
 class DataTable(urwid.Pile):
 	def __init__(self, columns, walker):
 		self.list_box = VimStyleListBox(walker)
@@ -126,6 +156,8 @@ class SeriesWalker(object):
 	def _create_entry(self, series):
 		entry = SeriesEntry(self.session, series) 
 		urwid.connect_signal(entry, "series_changed", self.reload)
+		urwid.connect_signal(entry, "marking_activated", self.re_emit, "marking_activated")
+		urwid.connect_signal(entry, "marking_deactivated", self.re_emit, "marking_deactivated")
 		return entry
 
 	def _clamp_focus(self):
@@ -153,9 +185,14 @@ class SeriesWalker(object):
 	def set_focus(self, position):
 		self.focus = position
 	
+	def re_emit(self, signal):
+		urwid.emit_signal(self, signal)
+	
 	@property
 	def total_seen_episodes(self):
 		return self.session.query(func.sum(Series.seen)).filter(self.filter).one()[0] or 0
+
+urwid.register_signal(SeriesWalker, ["marking_activated", "marking_deactivated"])
 
 class SeriesEntry(urwid.WidgetWrap):
 	__marking_active = False
@@ -183,6 +220,7 @@ class SeriesEntry(urwid.WidgetWrap):
 				"p": "planned" # mark as planned
 			}
 		self.__marking_active = False
+		urwid.emit_signal(self, "marking_deactivated")
 		if key in keys.keys():
 			self.series.status = keys[key]
 			self.session.commit()
@@ -201,6 +239,7 @@ class SeriesEntry(urwid.WidgetWrap):
 			self.session.commit() # Maybe we should commit only after some time
 			urwid.emit_signal(self, "series_changed")
 		elif key == "m":
+			urwid.emit_signal(self, "marking_activated")
 			self.__marking_active = True
 		elif key == "s":
 			pass # Set seen to an arbitary number
@@ -209,7 +248,7 @@ class SeriesEntry(urwid.WidgetWrap):
 		else:
 			return key
 
-urwid.register_signal(SeriesEntry, ["series_changed", "marking_active"])
+urwid.register_signal(SeriesEntry, ["series_changed", "marking_activated", "marking_deactivated"])
 
 class VimStyleListBox(urwid.ListBox):
 	""" ListBox that changes focus with j and k keys and supports mouse wheel scrolling"""
