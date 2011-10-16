@@ -77,6 +77,7 @@ class View(urwid.WidgetWrap):
 		urwid.connect_signal(self.walker, "series_changed", self.redraw_footer)
 		urwid.connect_signal(self.walker, "marking_activated", self.marking_activated)
 		urwid.connect_signal(self.walker, "marking_deactivated", self.redraw_footer)
+		urwid.connect_signal(self.walker, "deletion_requested", self.handle_delete)
 		self.table = SeriesTable(self.walker)
 		self.setup_widgets()
 		urwid.WidgetWrap.__init__(self, urwid.Frame(self.body, self.header, self.footer))
@@ -95,6 +96,22 @@ class View(urwid.WidgetWrap):
 	def redraw_footer(self):
 		self.setup_footer()
 		self.refresh()
+	
+	def handle_delete(self, series):
+		prompt = Prompt("Do you really want to delete \"%s\" [y/N]?: " % series[0].name)
+		urwid.connect_signal(prompt, "input_received", self.delete_confirmation, series)
+		self.footer = urwid.AttrWrap(prompt, self.attr)
+		self._w.set_focus("footer")
+		self.refresh()
+	
+	def delete_confirmation(self, text, series):
+		self._w.set_focus("body")
+		if text.lower() == u"y":
+			self.session.delete(series[0]) # FIXME: Why is series a tuple O_o
+			self.session.commit()
+			self.reload()
+		else:
+			self.redraw_footer()
 	
 	def refresh(self):
 		self._w.set_body(self.body)
@@ -160,6 +177,7 @@ class SeriesWalker(object):
 		urwid.connect_signal(entry, "series_changed", self.reload)
 		urwid.connect_signal(entry, "marking_activated", self.re_emit, "marking_activated")
 		urwid.connect_signal(entry, "marking_deactivated", self.re_emit, "marking_deactivated")
+		urwid.connect_signal(entry, "deletion_requested", self.re_emit, "deletion_requested")
 		return entry
 
 	def _clamp_focus(self):
@@ -187,14 +205,17 @@ class SeriesWalker(object):
 	def set_focus(self, position):
 		self.focus = position
 	
-	def re_emit(self, signal):
-		urwid.emit_signal(self, signal)
+	def re_emit(self, *args):
+		if len(args) >= 2:
+			urwid.emit_signal(self, args[-1], args[0:-1])
+		else:
+			urwid.emit_signal(self, args[-1])
 	
 	@property
 	def total_seen_episodes(self):
 		return self.session.query(func.sum(Series.seen)).filter(self.filter).one()[0] or 0
 
-urwid.register_signal(SeriesWalker, ["series_changed", "marking_activated", "marking_deactivated"])
+urwid.register_signal(SeriesWalker, ["series_changed", "marking_activated", "marking_deactivated", "deletion_requested"])
 
 class SeriesEntry(urwid.WidgetWrap):
 	__marking_active = False
@@ -246,11 +267,11 @@ class SeriesEntry(urwid.WidgetWrap):
 		elif key == "s":
 			pass # Set seen to an arbitary number
 		elif key == "x":
-			pass # Remove series
+			urwid.emit_signal(self, "deletion_requested", self.series)
 		else:
 			return key
 
-urwid.register_signal(SeriesEntry, ["series_changed", "marking_activated", "marking_deactivated"])
+urwid.register_signal(SeriesEntry, ["series_changed", "marking_activated", "marking_deactivated", "deletion_requested"])
 
 class VimStyleListBox(urwid.ListBox):
 	""" ListBox that changes focus with j and k keys and supports mouse wheel scrolling"""
@@ -272,7 +293,15 @@ class VimStyleListBox(urwid.ListBox):
 			return True
 		else:
 			return False
-		
+
+class Prompt(urwid.Edit):
+	def keypress(self, size, key):
+		if key == "enter":
+			urwid.emit_signal(self, "input_received", self.get_edit_text())
+		else:
+			urwid.Edit.keypress(self, size, key)
+
+urwid.register_signal(Prompt, ["input_received"])
 
 class AddSeriesDialog(urwid.WidgetWrap):
 	def __init__(self, background, session):
@@ -313,16 +342,16 @@ def parse_args():
 		Keys
 		h\t: Move to a view in left
 		l\t: Move to a view in right
-		1..5\t: Move to a spesific view
+		1-5\t: Move to a spesific view
 		j\t: Focus next item
 		k\t: Focus previous item
 		i\t: Increment seen episodes count for selected series
 		d\t: Decrement seen episodes count for selected series
 		s\t: Set seen episodes count to an arbitary number
-		m-a\t: Mark series as active
-		m-h\t: Mark series as on hold
-		m-d\t: Mark series as dropped
-		m-p\t: Mark series as planned
+		ma\t: Mark series as active
+		mh\t: Mark series as on hold
+		md\t: Mark series as dropped
+		mp\t: Mark series as planned
 		n\t: Add new series
 		x\t: Delete selected series
 	""")
