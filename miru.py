@@ -376,7 +376,7 @@ def parse_args():
 		k\t: Focus previous item
 		i\t: Increment seen episodes count for selected series
 		d\t: Decrement seen episodes count for selected series
-		s\t: Set seen episodes count to an arbitary number
+		s\t: Set seen episodes count to an arbitrary number
 		ma\t: Mark series as active
 		mh\t: Mark series as on hold
 		md\t: Mark series as dropped
