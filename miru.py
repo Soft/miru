@@ -98,7 +98,7 @@ class View(urwid.WidgetWrap):
 		self.refresh()
 	
 	def handle_delete(self, series):
-		prompt = Prompt("Do you really want to delete \"%s\" [y/N]?: " % series[0].name)
+		prompt = Prompt("Do you really want to delete \"%s\" [y/N]?: " % series.name)
 		urwid.connect_signal(prompt, "input_received", self.delete_confirmation, series)
 		self.footer = urwid.AttrWrap(prompt, self.attr)
 		self._w.set_focus("footer")
@@ -107,7 +107,7 @@ class View(urwid.WidgetWrap):
 	def delete_confirmation(self, text, series):
 		self._w.set_focus("body")
 		if text.lower() == u"y":
-			self.session.delete(series[0]) # FIXME: Why is series a tuple O_o
+			self.session.delete(series)
 			self.session.commit()
 			self.reload()
 		else:
@@ -207,7 +207,7 @@ class SeriesWalker(object):
 	
 	def re_emit(self, *args):
 		if len(args) >= 2:
-			urwid.emit_signal(self, args[-1], args[0:-1])
+			urwid.emit_signal(self, args[-1], *args[0:-1])
 		else:
 			urwid.emit_signal(self, args[-1])
 	
