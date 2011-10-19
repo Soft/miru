@@ -102,7 +102,7 @@ class View(urwid.WidgetWrap):
 	def show_input(self, widget, callback, *args):
 		def wrapper(*signal_args):
 			self._w.set_focus("body")
-			callback(*(signal_args + args))
+			return callback(*(signal_args + args))
 		urwid.connect_signal(widget, "input_received", wrapper)
 		urwid.connect_signal(widget, "input_cancelled", self.redraw_footer)
 		self.footer = urwid.AttrWrap(widget, self.attr)
@@ -122,7 +122,7 @@ class View(urwid.WidgetWrap):
 			self.redraw_footer()
 	
 	def handle_set_seen(self, series):
-		self.show_input(IntPrompt(u"Set number of seen episodes for \"%s\": " % series.name),
+		self.show_input(IntPrompt(u"Set the number of seen episodes for \"%s\": " % series.name),
 				self.set_seen_confirmation, series)
 	
 	def set_seen_confirmation(self, number, series):
