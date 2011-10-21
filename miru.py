@@ -34,6 +34,8 @@ class MainWindow(object):
 				View("Dropped", "dropped", "hold", session, Series.status == "dropped"),
 				View("Plan to Watch", "planned", "planned", session, Series.status == "planned"),
 			]
+		for view in self.views:
+			urwid.connect_signal(view, "ordering_changed", self.ordering_changed)
 		self.current = 0
 		self.session = session
 		self.display_view(self.current)
@@ -59,6 +61,11 @@ class MainWindow(object):
 	def add_series_dialog_closed(self):
 		self.display_view(self.current)
 	
+	def ordering_changed(self, ordering):
+		for view in self.views:
+			view.set_ordering(ordering)
+		self.views[self.current].reload()
+	
 	def display_view(self, index):
 		self.current = index
 		self.views[index].reload()
@@ -83,6 +90,10 @@ class MainWindow(object):
 		self.loop.run()
 
 class View(urwid.WidgetWrap):
+	signals = ["ordering_changed"]
+
+	__order_by_active = False
+
 	def __init__(self, title, attr, status, session, filter):
 		self.title = title
 		self.attr = attr
@@ -109,11 +120,40 @@ class View(urwid.WidgetWrap):
 				("highlight", "p"), "lanned"], "left"),
 			self.attr)
 		self.refresh()
+	
+	def order_by_activated(self):
+		self.footer = urwid.AttrWrap(
+			urwid.Text([("highlight", "Order by:"), " ",
+				("highlight", "n"), "ame, ",
+				("highlight", "s"), "een, ",
+				("highlight", "e"), "pisodes, "], "left"),
+			self.attr)
+		self.refresh()
+	
+	def handle_order_by(self, key):
+		keys = {
+				"n": Series.name,
+				"s": Series.seen,
+				"e": Series.episodes
+			}
+		self.__order_by_active = False
+		self.redraw_footer()
+		if key in keys.keys():
+			urwid.emit_signal(self, "ordering_changed", keys[key])
 
 	def redraw_footer(self):
 		self._w.set_focus("body")
 		self.setup_footer()
 		self.refresh()
+	
+	def keypress(self, size, key):
+		if self.__order_by_active:
+			self.handle_order_by(key)
+		elif key == "o":
+			self.__order_by_active = True
+			self.order_by_activated()
+		else:
+			return self._w.keypress(size, key)
 
 	def show_input(self, widget, callback, *args):
 		def wrapper(*signal_args):
@@ -154,6 +194,9 @@ class View(urwid.WidgetWrap):
 	def reload(self):
 		self.walker.reload()
 		self.refresh()
+	
+	def set_ordering(self, ordering):
+		self.walker.order_by = ordering
 	
 	def setup_header(self):
 		self.header = urwid.AttrWrap(urwid.Text(self.title, "center"), self.attr)
@@ -197,11 +240,12 @@ class SeriesWalker(object):
 	def __init__(self, session, filter):
 		self.session = session
 		self.filter = filter
+		self.order_by = Series.name
 		self.focus = 0
 		self.reload()
 	
 	def reload(self):
-		self.data = self.session.query(Series).filter(self.filter).order_by(Series.name).all()
+		self.data = self.session.query(Series).filter(self.filter).order_by(self.order_by).all()
 		self.entries = [urwid.AttrMap(w, None, "reveal focus") for w in map(self._create_entry, self.data)]
 		urwid.emit_signal(self, "series_changed")
 	
@@ -383,10 +427,8 @@ class AddSeriesDialog(urwid.Overlay):
 		if key == "tab":
 			self.selected = (self.selected + 1) % len(self.tab_index)
 			self.select()
-			return None
 		if key == "esc":
 			urwid.emit_signal(self, "closed")
-			return None
 		else:
 			return urwid.Overlay.keypress(self, size, key)
 	
@@ -432,8 +474,12 @@ def parse_args():
 		mh\t: Mark series as on hold
 		md\t: Mark series as dropped
 		mp\t: Mark series as planned
+		on\t: Order by name
+		os\t: Order by seen episodes
+		oe\t: Order by episode count
 		a\t: Add new series
 		x\t: Delete selected series
+		q, Q\t: Exit Miru
 	""")
 	parser = ArgumentParser("Tool for maintaining a log of seen tv-series' episodes.",
 			epilog=keys,
