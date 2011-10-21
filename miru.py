@@ -28,11 +28,11 @@ class MainWindow(object):
 
 	def __init__(self, session):
 		self.views = [
-				View("Currently Watching", "current", session, and_(Series.seen < Series.episodes, Series.status == None)),
-				View("Completed", "completed", session, Series.seen == Series.episodes),
-				View("On Hold", "hold", session, Series.status == "hold"),
-				View("Dropped", "dropped", session, Series.status == "dropped"),
-				View("Plan to Watch", "planned", session, Series.status == "planned"),
+				View("Currently Watching", "current", None, session, and_(Series.seen < Series.episodes, Series.status == None)),
+				View("Completed", "completed", "completed", session, Series.seen == Series.episodes), # ugly
+				View("On Hold", "hold", "hold", session, Series.status == "hold"),
+				View("Dropped", "dropped", "hold", session, Series.status == "dropped"),
+				View("Plan to Watch", "planned", "planned", session, Series.status == "planned"),
 			]
 		self.current = 0
 		self.session = session
@@ -48,9 +48,12 @@ class MainWindow(object):
 		elif key in map(str, range(1, len(self.views) + 1)):
 			self.display_view(int(key) - 1)
 		elif key == "n":
-			dialog = AddSeriesDialog(self.views[self.current], self.session)
-			urwid.connect_signal(dialog, "closed", self.add_series_dialog_closed)
-			self.frame.set_body(dialog)
+			self.show_add_series_dialog()
+	
+	def show_add_series_dialog(self):
+		dialog = AddSeriesDialog(self.views[self.current], self.views[self.current].status, self.session)
+		urwid.connect_signal(dialog, "closed", self.add_series_dialog_closed)
+		self.frame.set_body(dialog)
 	
 	def add_series_dialog_closed(self):
 		self.display_view(self.current)
@@ -75,9 +78,10 @@ class MainWindow(object):
 		self.loop.run()
 
 class View(urwid.WidgetWrap):
-	def __init__(self, title, attr, session, filter):
+	def __init__(self, title, attr, status, session, filter):
 		self.title = title
 		self.attr = attr
+		self.status = status
 		self.session = session
 		self.filter = filter
 		self.walker = SeriesWalker(session, filter)
@@ -345,8 +349,9 @@ class AddSeriesDialog(urwid.Overlay):
 	signals = ["closed"]
 	selected = 0
 
-	def __init__(self, background, session):
+	def __init__(self, background, status, session):
 		self.session = session
+		self.status = status
 		self.name_edit = urwid.AttrWrap(urwid.Edit(), "edit")
 		self.episode_edit = urwid.AttrWrap(urwid.IntEdit(), "edit")
 		self.add_button = urwid.AttrWrap(urwid.Button(u"Add", self.add_button_click), "button")
@@ -380,7 +385,9 @@ class AddSeriesDialog(urwid.Overlay):
 		else:
 			return urwid.Overlay.keypress(self, size, key)
 	
-	def add_series(self, name, seen, episodes, status=None):
+	def add_series(self, name, seen, episodes):
+		seen = episodes if self.status == "completed" else seen
+		status = None if self.status in (None, "completed") else self.status
 		self.session.add(Series(name=name, episodes=episodes, seen=seen, status=status))
 		self.session.commit()
 
