@@ -47,7 +47,7 @@ class MainWindow(object):
 			self.display_view(self.current + 1 if (self.current + 1) <= len(self.views) - 1 else 0)
 		elif key in map(str, range(1, len(self.views) + 1)):
 			self.display_view(int(key) - 1)
-		elif key == "n":
+		elif key == "a":
 			self.show_add_series_dialog()
 	
 	def show_add_series_dialog(self):
@@ -427,7 +427,7 @@ def parse_args():
 		mh\t: Mark series as on hold
 		md\t: Mark series as dropped
 		mp\t: Mark series as planned
-		n\t: Add new series
+		a\t: Add new series
 		x\t: Delete selected series
 	""")
 	parser = ArgumentParser("Tool for maintaining a log of seen tv-series' episodes.",
