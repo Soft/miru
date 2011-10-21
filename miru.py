@@ -45,8 +45,12 @@ class MainWindow(object):
 		elif key in map(str, range(1, len(self.views) + 1)):
 			self.display_view(int(key) - 1)
 		elif key == "n":
-			pass
-			#self.frame.set_body(AddSeriesDialog(self.frame, self.session))
+			dialog = AddSeriesDialog(self.views[self.current], self.session)
+			urwid.connect_signal(dialog, "closed", self.add_series_dialog_closed)
+			self.frame.set_body(dialog)
+	
+	def add_series_dialog_closed(self):
+		self.display_view(self.current)
 	
 	def display_view(self, index):
 		self.current = index
@@ -336,18 +340,49 @@ class IntPrompt(Prompt):
 
 urwid.register_signal(IntPrompt, ["input_received", "input_cancelled"]) # Do I really have to specify this
 
-class AddSeriesDialog(urwid.WidgetWrap):
+class AddSeriesDialog(urwid.Overlay):
+	selected = 0
+
 	def __init__(self, background, session):
-		#content = urwid.LineBox(urwid.GridFlow(
-				#[urwid.Text("Hello")], 5, 1, 1, "center"
-			#), title="Add Series")
-		#urwid.WidgetWrap.__init__(self, urwid.Overlay(content,
-			#background, align="center", width=("relative", 50), valign="middle", height=("relative", 50)))
-		pass
+		self.session = session
+		self.name_edit = urwid.Edit()
+		self.episode_edit = urwid.IntEdit()
+		self.add_button = urwid.Button(u"Add", self.add_button_click)
+		self.tab_index = [self.name_edit, self.episode_edit, self.add_button]
+		self.content = urwid.GridFlow([
+				urwid.Text(u"Name"),
+				self.name_edit,
+				urwid.Text(u"Episodes"),
+				self.episode_edit,
+				self.add_button
+			], 20, 1, 1, "center")
+		linebox = urwid.LineBox(urwid.Filler(self.content), u"Add Series")
+		self.select()
+		urwid.Overlay.__init__(self, linebox, background, "center", 50, "middle", 15)
 	
-	def add_series(name, seen, episodes, status=None):
+	def select(self):
+		self.content.set_focus(self.tab_index[self.selected])
+	
+	def add_button_click(self, widget):
+		self.add_series(self.name_edit.get_edit_text(), 0, self.episode_edit.get_edit_text())
+		urwid.emit_signal(self, "closed")
+	
+	def keypress(self, size, key):
+		if key == "tab":
+			self.selected = (self.selected + 1) % len(self.tab_index)
+			self.select()
+			return None
+		if key == "esc":
+			urwid.emit_signal(self, "closed")
+			return None
+		else:
+			return urwid.Overlay.keypress(self, size, key)
+	
+	def add_series(self, name, seen, episodes, status=None):
 		self.session.add(Series(name=name, episodes=episodes, seen=seen, status=status))
 		self.session.commit()
+
+urwid.register_signal(AddSeriesDialog, ["closed"])
 
 Base = declarative_base()
 
