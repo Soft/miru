@@ -471,6 +471,8 @@ class Series(Base):
 	def add_view(self):
 		if self.episodes > self.seen:
 			self.seen += 1
+			if self.status == "planned":
+				self.status = None
 	
 	def remove_view(self):
 		if self.seen > 0:
