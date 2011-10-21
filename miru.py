@@ -19,7 +19,10 @@ class MainWindow(object):
 			("hold", "white", "dark cyan"),
 			("dropped", "white", "dark gray"),
 			("planned", "white", "dark red"),
-			("highlight", "black", "white")
+			("highlight", "black", "white"),
+			("edit", "white", "dark gray"),
+			("button", "white", "dark blue"),
+			("dialog", "black", "light gray")
 		]
 	frame = None
 
@@ -344,9 +347,9 @@ class AddSeriesDialog(urwid.Overlay):
 
 	def __init__(self, background, session):
 		self.session = session
-		self.name_edit = urwid.Edit()
-		self.episode_edit = urwid.IntEdit()
-		self.add_button = urwid.Button(u"Add", self.add_button_click)
+		self.name_edit = urwid.AttrWrap(urwid.Edit(), "edit")
+		self.episode_edit = urwid.AttrWrap(urwid.IntEdit(), "edit")
+		self.add_button = urwid.AttrWrap(urwid.Button(u"Add", self.add_button_click), "button")
 		self.tab_index = [self.name_edit, self.episode_edit, self.add_button]
 		self.content = urwid.GridFlow([
 				urwid.Text(u"Name"),
@@ -355,9 +358,9 @@ class AddSeriesDialog(urwid.Overlay):
 				self.episode_edit,
 				self.add_button
 			], 20, 1, 1, "center")
-		linebox = urwid.LineBox(urwid.Filler(self.content), u"Add Series")
+		linebox = urwid.AttrWrap(urwid.LineBox(urwid.Filler(self.content), u"Add Series"), "dialog")
 		self.select()
-		urwid.Overlay.__init__(self, linebox, background, "center", 50, "middle", 15)
+		urwid.Overlay.__init__(self, linebox, background, "center", 50, "middle", 12)
 	
 	def select(self):
 		self.content.set_focus(self.tab_index[self.selected])
