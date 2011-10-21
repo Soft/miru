@@ -48,7 +48,7 @@ class MainWindow(object):
 				View("Currently Watching", "current", None, session, and_(Series.seen < Series.episodes, Series.status == None)),
 				View("Completed", "completed", "completed", session, Series.seen == Series.episodes), # ugly
 				View("On Hold", "hold", "hold", session, Series.status == "hold"),
-				View("Dropped", "dropped", "hold", session, Series.status == "dropped"),
+				View("Dropped", "dropped", "dropped", session, Series.status == "dropped"),
 				View("Plan to Watch", "planned", "planned", session, Series.status == "planned"),
 			]
 		for view in self.views:
@@ -97,7 +97,6 @@ class MainWindow(object):
 		return isinstance(self.frame.get_body(), AddSeriesDialog)
 
 	def set_terminal_title(self, title):
-		import sys
 		sys.stdout.write("\x1b]2;%s\x07" % title)
 
 	def main(self):
