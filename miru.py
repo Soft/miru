@@ -41,14 +41,15 @@ class MainWindow(object):
 	def unhandled_input(self, key):
 		if key in ("q", "Q"):
 			raise urwid.ExitMainLoop()
-		elif key == "h":
-			self.display_view(self.current - 1 if (self.current - 1) >= 0 else len(self.views) - 1)
-		elif key == "l":
-			self.display_view(self.current + 1 if (self.current + 1) <= len(self.views) - 1 else 0)
-		elif key in map(str, range(1, len(self.views) + 1)):
-			self.display_view(int(key) - 1)
-		elif key == "a":
-			self.show_add_series_dialog()
+		elif not self.displaying_dialog:
+			if key == "h":
+				self.display_view(self.current - 1 if (self.current - 1) >= 0 else len(self.views) - 1)
+			elif key == "l":
+				self.display_view(self.current + 1 if (self.current + 1) <= len(self.views) - 1 else 0)
+			elif key in map(str, range(1, len(self.views) + 1)):
+				self.display_view(int(key) - 1)
+			elif key == "a":
+				self.show_add_series_dialog()
 	
 	def show_add_series_dialog(self):
 		dialog = AddSeriesDialog(self.views[self.current], self.views[self.current].status, self.session)
@@ -66,6 +67,10 @@ class MainWindow(object):
 			self.frame.set_body(self.views[index])
 		else:
 			self.frame = urwid.Frame(self.views[index])
+	
+	@property
+	def displaying_dialog(self):
+		return isinstance(self.frame.get_body(), AddSeriesDialog)
 
 	def set_terminal_title(self, title):
 		import sys
