@@ -240,6 +240,9 @@ urwid.register_signal(SeriesWalker, ["series_changed", "marking_activated", "mar
 	"deletion_requested", "setting_seen_requested"])
 
 class SeriesEntry(urwid.WidgetWrap):
+	signals = ["series_changed", "marking_activated", "marking_deactivated",
+	"deletion_requested", "setting_seen_requested"]
+
 	__marking_active = False
 
 	def __init__(self, session, series):
@@ -293,9 +296,6 @@ class SeriesEntry(urwid.WidgetWrap):
 		else:
 			return key
 
-urwid.register_signal(SeriesEntry, ["series_changed", "marking_activated", "marking_deactivated",
-	"deletion_requested", "setting_seen_requested"])
-
 class VimStyleListBox(urwid.ListBox):
 	""" ListBox that changes focus with j and k keys and supports mouse wheel scrolling"""
 
@@ -318,6 +318,8 @@ class VimStyleListBox(urwid.ListBox):
 			return False
 
 class Prompt(urwid.Edit):
+	signals = ["input_received", "input_cancelled"]
+
 	def format(self, string):
 		return string
 
@@ -329,8 +331,6 @@ class Prompt(urwid.Edit):
 		else:
 			urwid.Edit.keypress(self, size, key)
 
-urwid.register_signal(Prompt, ["input_received", "input_cancelled"])
-
 class IntPrompt(Prompt):
 	def format(self, string):
 		return int(string) if string else 0
@@ -338,9 +338,8 @@ class IntPrompt(Prompt):
 	def valid_char(self, char):
 		return len(char) == 1 and char in "0123456789"
 
-urwid.register_signal(IntPrompt, ["input_received", "input_cancelled"]) # Do I really have to specify this
-
 class AddSeriesDialog(urwid.Overlay):
+	signals = ["closed"]
 	selected = 0
 
 	def __init__(self, background, session):
@@ -381,8 +380,6 @@ class AddSeriesDialog(urwid.Overlay):
 	def add_series(self, name, seen, episodes, status=None):
 		self.session.add(Series(name=name, episodes=episodes, seen=seen, status=status))
 		self.session.commit()
-
-urwid.register_signal(AddSeriesDialog, ["closed"])
 
 Base = declarative_base()
 
