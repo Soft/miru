@@ -126,7 +126,7 @@ class View(urwid.WidgetWrap):
 			urwid.Text([("highlight", "Order by:"), " ",
 				("highlight", "n"), "ame, ",
 				("highlight", "s"), "een, ",
-				("highlight", "e"), "pisodes, "], "left"),
+				("highlight", "e"), "pisodes"], "left"),
 			self.attr)
 		self.refresh()
 	
@@ -140,6 +140,8 @@ class View(urwid.WidgetWrap):
 		self.redraw_footer()
 		if key in keys.keys():
 			urwid.emit_signal(self, "ordering_changed", keys[key])
+		else:
+			return key
 
 	def redraw_footer(self):
 		self._w.set_focus("body")
@@ -148,7 +150,7 @@ class View(urwid.WidgetWrap):
 	
 	def keypress(self, size, key):
 		if self.__order_by_active:
-			self.handle_order_by(key)
+			return self.handle_order_by(key)
 		elif key == "o":
 			self.__order_by_active = True
 			self.order_by_activated()
