@@ -217,7 +217,13 @@ class View(urwid.WidgetWrap):
 		self.walker.order_by = ordering
 	
 	def setup_header(self):
-		self.header = urwid.AttrWrap(urwid.Text(self.title, "center"), self.attr)
+		self.header = urwid.AttrWrap(
+			urwid.Columns([
+					("weight", 0.1, urwid.Text("<")),
+					urwid.Text(self.title, "center"),
+					("weight", 0.1, urwid.Text(">", "right"))
+				]),
+			self.attr)
 	
 	def setup_body(self):
 		self.body = urwid.AttrWrap(urwid.Pile([
