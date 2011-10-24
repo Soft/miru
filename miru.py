@@ -328,7 +328,7 @@ class SeriesEntry(urwid.WidgetWrap):
 	def __init__(self, session, series):
 		self.session = session
 		self.series = series
-		self.name = urwid.Text(self.series.name)
+		self.name = urwid.Text(self.series.name, wrap="clip")
 		self.seen = urwid.Text(unicode(self.series.seen), align="right")
 		self.episodes = urwid.Text(unicode(self.series.episodes), align="right")
 		urwid.WidgetWrap.__init__(self, urwid.Columns([
