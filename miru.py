@@ -61,9 +61,9 @@ class MainWindow(object):
 		if key in ("q", "Q"):
 			raise urwid.ExitMainLoop()
 		elif not self.displaying_dialog:
-			if key == "h":
+			if key in ("h", "left"):
 				self.display_view(self.current - 1 if (self.current - 1) >= 0 else len(self.views) - 1)
-			elif key == "l":
+			elif key in ("l", "right"):
 				self.display_view(self.current + 1 if (self.current + 1) <= len(self.views) - 1 else 0)
 			elif key in map(str, range(1, len(self.views) + 1)):
 				self.display_view(int(key) - 1)
