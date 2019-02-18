@@ -22,7 +22,7 @@ from sqlalchemy import and_, func
 from miru.models import Series
 
 
-class MainWindow(object):
+class MainWindow:
     palette = [
         ("body", "default", "default"),
         ("reveal focus", "black", "white"),
@@ -324,7 +324,7 @@ class SeriesTable(DataTable):
         )
 
 
-class SeriesWalker(object):
+class SeriesWalker:
     def __init__(self, session, filter):
         self.session = session
         self.filter = filter
