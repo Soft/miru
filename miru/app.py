@@ -16,6 +16,7 @@
 
 import os.path
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from textwrap import dedent
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -27,33 +28,31 @@ DEFAULT_DATABASE = os.path.expanduser("~/.miru.db")
 
 
 def parse_args():
-    from textwrap import dedent
-
     keys = dedent(
         """
-		Keys
-		h\t: Move to a view in left
-		l\t: Move to a view in right
-		1-5\t: Move to a spesific view
-		j\t: Focus next item
-		k\t: Focus previous item
-		i\t: Increment seen episodes count for selected series
-		d\t: Decrement seen episodes count for selected series
-		s\t: Set seen episodes count to an arbitrary number
-		ma\t: Mark series as active
-		mh\t: Mark series as on hold
-		md\t: Mark series as dropped
-		mp\t: Mark series as planned
-		on\t: Order by name
-		os\t: Order by seen episodes
-		oe\t: Order by episode count
-		a\t: Add new series
-		x\t: Delete selected series
-		q, Q\t: Exit Miru
+        Keys
+        h\t: Move to a view in left
+        l\t: Move to a view in right
+        1-5\t: Move to a spesific view
+        j\t: Focus next item
+        k\t: Focus previous item
+        i\t: Increment seen episodes count for selected series
+        d\t: Decrement seen episodes count for selected series
+        s\t: Set seen episodes count to an arbitrary number
+        ma\t: Mark series as active
+        mh\t: Mark series as on hold
+        md\t: Mark series as dropped
+        mp\t: Mark series as planned
+        on\t: Order by name
+        os\t: Order by seen episodes
+        oe\t: Order by episode count
+        a\t: Add new series
+        x\t: Delete selected series
+        q, Q\t: Exit Miru
 	"""
     )
     parser = ArgumentParser(
-        "Tool for maintaining a log of seen tv-series' episodes.",
+        "Utility for keeping track of watched TV episodes and movies.",
         epilog=keys,
         formatter_class=RawDescriptionHelpFormatter,
     )

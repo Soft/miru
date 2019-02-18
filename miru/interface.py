@@ -128,7 +128,7 @@ class MainWindow:
 class View(urwid.WidgetWrap):
     signals = ["ordering_changed"]
 
-    __order_by_active = False
+    _order_by_active = False
 
     def __init__(self, title, attr, status, session, filter):
         self.title = title
@@ -146,8 +146,8 @@ class View(urwid.WidgetWrap):
         )
         self.table = SeriesTable(self.walker)
         self.setup_widgets()
-        urwid.WidgetWrap.__init__(
-            self, urwid.Frame(self.body, self.header, self.footer)
+        super().__init__(
+            urwid.Frame(self.body, self.header, self.footer)
         )
         self.reload()
 
@@ -194,7 +194,7 @@ class View(urwid.WidgetWrap):
 
     def handle_order_by(self, key):
         keys = {"n": Series.name, "s": Series.seen, "e": Series.episodes}
-        self.__order_by_active = False
+        self._order_by_active = False
         self.redraw_footer()
         if key in keys.keys():
             urwid.emit_signal(self, "ordering_changed", keys[key])
@@ -207,10 +207,10 @@ class View(urwid.WidgetWrap):
         self.refresh()
 
     def keypress(self, size, key):
-        if self.__order_by_active:
+        if self._order_by_active:
             return self.handle_order_by(key)
         elif key == "o":
-            self.__order_by_active = True
+            self._order_by_active = True
             self.order_by_activated()
         else:
             return self._w.keypress(size, key)
@@ -285,7 +285,7 @@ class View(urwid.WidgetWrap):
     def setup_footer(self):
         self.footer = urwid.AttrWrap(
             urwid.Text(
-                "Total of %d seen episodes" % self.walker.total_seen_episodes, "center"
+                "Total of {} seen episodes".format(self.walker.total_seen_episodes), "center"
             ),
             self.attr,
         )
@@ -299,11 +299,10 @@ class View(urwid.WidgetWrap):
 class DataTable(urwid.Pile):
     def __init__(self, columns, walker):
         self.list_box = VimStyleListBox(walker)
-        urwid.Pile.__init__(
-            self,
+        super().__init__(
             [
                 ("flow", urwid.Columns(columns)),
-                ("flow", urwid.Divider("\u2500")),
+                ("flow", urwid.Divider("─")),
                 self.list_box,
             ],
             focus_item=2,
@@ -313,8 +312,7 @@ class DataTable(urwid.Pile):
 class SeriesTable(DataTable):
     def __init__(self, walker):
         self.walker = walker
-        DataTable.__init__(
-            self,
+        super().__init__(
             [
                 ("weight", 0.6, urwid.Text("Name")),
                 ("weight", 0.2, urwid.Text("Seen", align="right")),
@@ -422,8 +420,7 @@ class SeriesEntry(urwid.WidgetWrap):
         self.name = urwid.Text(self.series.name, wrap="clip")
         self.seen = urwid.Text(str(self.series.seen), align="right")
         self.episodes = urwid.Text(str(self.series.episodes), align="right")
-        urwid.WidgetWrap.__init__(
-            self,
+        super().__init__(
             urwid.Columns(
                 [
                     ("weight", 0.6, self.name),
@@ -474,7 +471,7 @@ class SeriesEntry(urwid.WidgetWrap):
 
 
 class VimStyleListBox(urwid.ListBox):
-    """ ListBox that changes focus with j and k keys and supports mouse wheel scrolling"""
+    """ListBox that changes focus with j and k keys and supports mouse wheel scrolling"""
 
     def keypress(self, size, key):
         if key == "k":
@@ -548,7 +545,7 @@ class AddSeriesDialog(urwid.Overlay):
             urwid.LineBox(urwid.Filler(self.content), "Add Series"), "dialog"
         )
         self.select()
-        urwid.Overlay.__init__(self, linebox, background, "center", 50, "middle", 12)
+        super().__init__(linebox, background, "center", 50, "middle", 12)
 
     def select(self):
         self.content.set_focus(self.tab_index[self.selected])
