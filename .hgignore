@@ -3,4 +3,6 @@ syntax: glob
 *.pyc
 *.egg-info/*
 dist/*
+env/*
+.mypy_cache/*
 

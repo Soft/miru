@@ -2,6 +2,5 @@
 
 **見る — to watch; to view;**
 
-Tool for maintaining a log of seen tv-series' episodes. Includes a nice ncurses based interface and sqlite backend for storage. Requires python 2.7, urwid and sqlalchemy.
-
-
+Utility for keeping track of watched TV episodes and movies. Includes a nice
+ncurses based interface and SQLite backend for storage.

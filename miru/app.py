@@ -1,6 +1,5 @@
-# coding: utf-8
 # Miru is a tool for maintaining a log of seen tv-series' episodes.
-# Copyright (C) 2011 Samuel Laurén <samuel.lauren@iki.fi>
+# Copyright (C) 2011-2019 Samuel Laurén <samuel.lauren@iki.fi>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,9 +25,12 @@ from miru.models import Base, Series
 
 DEFAULT_DATABASE = os.path.expanduser("~/.miru.db")
 
+
 def parse_args():
-	from textwrap import dedent
-	keys = dedent("""
+    from textwrap import dedent
+
+    keys = dedent(
+        """
 		Keys
 		h\t: Move to a view in left
 		l\t: Move to a view in right
@@ -48,23 +50,32 @@ def parse_args():
 		a\t: Add new series
 		x\t: Delete selected series
 		q, Q\t: Exit Miru
-	""")
-	parser = ArgumentParser("Tool for maintaining a log of seen tv-series' episodes.",
-			epilog=keys,
-			formatter_class=RawDescriptionHelpFormatter)
-	parser.add_argument("-m", "--memory", action="store_true", help="Use temporary in-memory database")
-	parser.add_argument("-d", "--database", default=DEFAULT_DATABASE, help="Path to a database")
-	return parser.parse_args()
+	"""
+    )
+    parser = ArgumentParser(
+        "Tool for maintaining a log of seen tv-series' episodes.",
+        epilog=keys,
+        formatter_class=RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "-m", "--memory", action="store_true", help="Use temporary in-memory database"
+    )
+    parser.add_argument(
+        "-d", "--database", default=DEFAULT_DATABASE, help="Path to a database"
+    )
+    return parser.parse_args()
+
 
 def connect_database(path, memory=False):
-	return create_engine("sqlite:///%s" % (":memory:" if memory else os.path.abspath(path)))
+    return create_engine(
+        "sqlite:///%s" % (":memory:" if memory else os.path.abspath(path))
+    )
+
 
 def main():
-	args = parse_args()
-	engine = connect_database(args.database, args.memory)
-	Base.metadata.create_all(engine)
-	Session = sessionmaker(engine)
-	session = Session()
-	MainWindow(session).main()
-
-
+    args = parse_args()
+    engine = connect_database(args.database, args.memory)
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(engine)
+    session = Session()
+    MainWindow(session).main()

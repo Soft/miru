@@ -1,6 +1,5 @@
-# coding: utf-8
 # Miru is a tool for maintaining a log of seen tv-series' episodes.
-# Copyright (C) 2011 Samuel Laurén <samuel.lauren@iki.fi>
+# Copyright (C) 2011-2019 Samuel Laurén <samuel.lauren@iki.fi>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,24 +19,23 @@ from sqlalchemy import Column, DateTime, Integer, String, Enum
 
 Base = declarative_base()
 
+
 class Series(Base):
-	__tablename__ = "series"
-	id = Column(Integer, primary_key=True)
-	name = Column(String(64), nullable=False)
-	episodes = Column(Integer, default=1)
-	seen = Column(Integer, default=0)
-	added = Column(DateTime())
-	completed = Column(DateTime())
-	status = Column(Enum("hold", "dropped", "planned"))
+    __tablename__ = "series"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64), nullable=False)
+    episodes = Column(Integer, default=1)
+    seen = Column(Integer, default=0)
+    added = Column(DateTime())
+    completed = Column(DateTime())
+    status = Column(Enum("hold", "dropped", "planned"))
 
-	def add_view(self):
-		if self.episodes > self.seen:
-			self.seen += 1
-			if self.status:
-				self.status = None
-	
-	def remove_view(self):
-		if self.seen > 0:
-			self.seen -= 1
+    def add_view(self):
+        if self.episodes > self.seen:
+            self.seen += 1
+            if self.status:
+                self.status = None
 
-
+    def remove_view(self):
+        if self.seen > 0:
+            self.seen -= 1
