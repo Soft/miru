@@ -1,0 +1,147 @@
+
+@import url(http://fonts.googleapis.com/css?family=Terminal+Dosis:400,600);
+
+$background: #f1f1f1;
+$header: #cb0b3d;
+$header-background: #fafafa;
+
+html, body {
+	margin: 0;
+	padding: 0;
+	min-height: 100%;
+}
+
+article, header, footer {
+	display: block;
+}
+
+body {
+	background: $background;
+	background-image: url("noise.png")
+}
+
+#content {
+	background: white;
+	min-height: 100%;
+	width: 600px;
+}
+
+#content > article {
+	padding: 1em;
+	font-family: 'Terminal Dosis', sans-serif;
+
+	header {
+		h1 {
+			font-size: 4em;
+			font-weight: 600;
+			margin: 0;
+		}
+
+		em {
+			font-family: Cambria, "Times New Roman", serif;
+		}
+	}
+
+	h1, h2 {
+		color: $header;
+	}
+
+	h2 {
+		background: $header-background;
+	}
+
+	p {
+		line-height: 1.5em;
+	}
+	
+	code {
+		border: solid 1px #fba1b8;
+		background: #ffeef2;
+		display: block;
+		width: 100%;
+		font-family: "Courier New", serif;
+		font-size: 0.9em;
+		text-shadow: #fba1b8 0 0 5px;
+
+		& > span {
+			padding: 10px;
+			display: block;
+		}
+
+		span.noselect {
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-o-user-select: none;
+			-khtml-user-select: none;
+			user-select: none;
+			padding-right: 6px;
+		}
+	}
+
+	.slideshow {
+		list-style-type: none;
+		margin: 0 auto;
+		padding: 0;
+		position: relative;
+		height: 350px;
+		background: #000;
+
+		li {
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+
+		li:not(:first-child) {
+			display: none;
+		}
+	}
+
+	table.keys {
+		width: 100%;
+		border-collapse: collapse;
+
+		tr {
+			td {
+				padding: 5px;
+			}
+
+			td:first-child {
+				width: 30%;
+			}
+
+			span.key {
+				font-family: "Dejavu Sans mono", Consolas, sans-serif;
+				background: -moz-linear-gradient(top, $background, $header-background);
+				background: -webkit-linear-gradient(top, $background, $header-background);
+				background: linear-gradient(top, $background, $header-background);
+				padding: 0 10px;
+				border: solid #ccc;
+				border-width: 1px 1px 2px;
+				border-radius: 2px;
+				margin: 0 2px;
+			}
+
+			span.key:first-child {
+				margin: 0 2px 0 0;
+			}
+
+			&:nth-child(odd) {
+				background: #f0f0f0;
+			}
+		}
+	}
+
+	footer {
+		margin: 50px 0 20px;
+		color: #cecece;
+		font-size: 1.1em;
+	}
+
+	&::-moz-selection {
+		color: white;
+		background: $header;
+	}
+
+}
+

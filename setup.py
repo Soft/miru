@@ -5,7 +5,7 @@ from setuptools import setup
 setup(
     name="miru",
     version="0.2.0",
-    description="Tool for maintaining a log of seen tv-series' episodes.",
+    description="Utility for keeping track of watched TV episodes and movies.",
     author="Samuel Laurén",
     author_email="samuel.lauren@iki.fi",
     url="https://bitbucket.org/Soft/miru",

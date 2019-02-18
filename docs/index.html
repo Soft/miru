@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Miru</title>
+    <meta charset="utf-8">
+    <link href="screen.css" rel="stylesheet" type="text/css">
+    <script
+      src="https://code.jquery.com/jquery-2.0.0.min.js"
+      integrity="sha384-RSXe9j39thYJayrqYBX6YfS7IV4bsKWZ9eEMYN+CLnB5pUyGAlXbUG/zWLqB62Na"
+      crossorigin="anonymous"
+    ></script>
+    <script src="slideshow.js"></script>
+  </head>
+  <body>
+    <div id="content">
+      <article>
+        <header>
+          <h1>Miru</h1>
+          <em>
+            <strong>見る</strong>— to watch; to view;
+          </em>
+        </header>
+        <p>
+          Utility for keeping track of watched TV episodes and movies. Includes a
+          nice ncurses based interface and SQLite backend for storage.
+        </p>
+        <h2>Screenshots</h2>
+        <ul class="slideshow">
+          <li>
+            <img src="screenshots/shot-1.png">
+          </li>
+          <li>
+            <img src="screenshots/shot-2.png">
+          </li>
+          <li>
+            <img src="screenshots/shot-3.png">
+          </li>
+          <li>
+            <img src="screenshots/shot-4.png">
+          </li>
+        </ul>
+        <h2>Installation</h2>
+        <code>
+          <span>
+            <span class="noselect">$</span>pip install hg+https://bitbucket.org/Soft/miru
+          </span>
+        </code>
+        <h2>Keys</h2>
+        <table class="keys">
+          <tr>
+            <td>
+              <span class="key">h</span>,
+              <span class="key">←</span>
+            </td>
+            <td>Move to a view in left</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">l</span>,
+              <span class="key">→</span>
+            </td>
+            <td>Move to a view in right</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">1</span>&mdash;
+              <span class="key">5</span>
+            </td>
+            <td>Move to a spesific view</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">j</span>,
+              <span class="key">↓</span>
+            </td>
+            <td>Focus next item</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">k</span>,
+              <span class="key">↑</span>
+            </td>
+            <td>Focus previous item</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">i</span>
+            </td>
+            <td>Increment seen episodes count for selected series</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">d</span>
+            </td>
+            <td>Decrement seen episodes count for selected series</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">s</span>
+            </td>
+            <td>Set seen episodes count to an arbitrary number</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">m</span>
+              <span class="key">a</span>
+            </td>
+            <td>Mark series as active</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">m</span>
+              <span class="key">h</span>
+            </td>
+            <td>Mark series as on hold</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">m</span>
+              <span class="key">d</span>
+            </td>
+            <td>Mark series as dropped</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">m</span>
+              <span class="key">p</span>
+            </td>
+            <td>Mark series as planned</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">o</span>
+              <span class="key">n</span>
+            </td>
+            <td>Order by name</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">o</span>
+              <span class="key">s</span>
+            </td>
+            <td>Order by seen episodes</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">o</span>
+              <span class="key">e</span>
+            </td>
+            <td>Order by episode count</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">a</span>
+            </td>
+            <td>Add new series</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">x</span>
+            </td>
+            <td>Delete selected series</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="key">q</span>,
+              <span class="key">Q</span>
+            </td>
+            <td>Exit Miru</td>
+          </tr>
+        </table>
+        <footer>
+          <small>♥ 2011-2019</small>
+        </footer>
+      </article>
+    </div>
+  </body>
+</html>

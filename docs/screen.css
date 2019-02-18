@@ -1,0 +1,92 @@
+@import url(http://fonts.googleapis.com/css?family=Terminal+Dosis:400,600);
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%; }
+
+article, header, footer {
+  display: block; }
+
+body {
+  background: #f1f1f1;
+  background-image: url("noise.png"); }
+
+#content {
+  background: white;
+  min-height: 100%;
+  width: 600px; }
+
+#content > article {
+  padding: 1em;
+  font-family: 'Terminal Dosis', sans-serif; }
+  #content > article header h1 {
+    font-size: 4em;
+    font-weight: 600;
+    margin: 0; }
+  #content > article header em {
+    font-family: Cambria, "Times New Roman", serif; }
+  #content > article h1, #content > article h2 {
+    color: #cb0b3d; }
+  #content > article h2 {
+    background: #fafafa; }
+  #content > article p {
+    line-height: 1.5em; }
+  #content > article code {
+    border: solid 1px #fba1b8;
+    background: #ffeef2;
+    display: block;
+    width: 100%;
+    font-family: "Courier New", serif;
+    font-size: 0.9em;
+    text-shadow: #fba1b8 0 0 5px; }
+    #content > article code > span {
+      padding: 10px;
+      display: block; }
+    #content > article code span.noselect {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -o-user-select: none;
+      -khtml-user-select: none;
+      user-select: none;
+      padding-right: 6px; }
+  #content > article .slideshow {
+    list-style-type: none;
+    margin: 0 auto;
+    padding: 0;
+    position: relative;
+    height: 350px;
+    background: #000; }
+    #content > article .slideshow li {
+      position: absolute;
+      top: 0;
+      left: 0; }
+    #content > article .slideshow li:not(:first-child) {
+      display: none; }
+  #content > article table.keys {
+    width: 100%;
+    border-collapse: collapse; }
+    #content > article table.keys tr td {
+      padding: 5px; }
+    #content > article table.keys tr td:first-child {
+      width: 30%; }
+    #content > article table.keys tr span.key {
+      font-family: "Dejavu Sans mono", Consolas, sans-serif;
+      background: -moz-linear-gradient(top, #f1f1f1, #fafafa);
+      background: -webkit-linear-gradient(top, #f1f1f1, #fafafa);
+      background: linear-gradient(top, #f1f1f1, #fafafa);
+      padding: 0 10px;
+      border: solid #ccc;
+      border-width: 1px 1px 2px;
+      border-radius: 2px;
+      margin: 0 2px; }
+    #content > article table.keys tr span.key:first-child {
+      margin: 0 2px 0 0; }
+    #content > article table.keys tr:nth-child(odd) {
+      background: #f0f0f0; }
+  #content > article footer {
+    margin: 50px 0 20px;
+    color: #cecece;
+    font-size: 1.1em; }
+  #content > article::-moz-selection {
+    color: white;
+    background: #cb0b3d; }
