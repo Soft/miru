@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from setuptools import setup, find_packages
-from pathib import Path
+from pathlib import Path
 
 readme = Path(__file__).parent.absolute() / "README.md"
 long_description = readme.read_text()
