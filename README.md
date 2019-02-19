@@ -7,11 +7,20 @@
 **見る — to watch; to view;**
 
 Utility for keeping track of watched TV episodes and movies. Includes a nice
-ncurses based interface and SQLite backend for storage.
+ncurses based interface and an SQLite backend for storage.
 
 ![screenshot](https://raw.githubusercontent.com/Soft/miru/master/docs/screenshots/shot-4.png)
 
 # Installation
+
+The latest stable version of Miru can be installed from [Python package
+index](https://pypi.org/project/miru/):
+
+```
+pip install --user miru
+```
+
+Alternatively, a development version can be obtained directly from GitHub:
 
 ```
 pip install --user git+https://github.com/Soft/miru.git
