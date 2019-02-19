@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import urwid
 import sys
+import urwid
 
 from sqlalchemy import and_, func
 
@@ -45,6 +45,7 @@ class MainWindow:
                 "current",
                 None,
                 session,
+                # pylint: disable=C0121
                 and_(Series.seen < Series.episodes, Series.status == None),
             ),
             View(
@@ -69,6 +70,9 @@ class MainWindow:
         self.current = 0
         self.session = session
         self.display_view(self.current)
+        self.loop = urwid.MainLoop(
+            self.frame, self.palette, unhandled_input=self.unhandled_input
+        )
 
     def unhandled_input(self, key):
         if key in ("q", "Q"):
@@ -105,7 +109,7 @@ class MainWindow:
     def display_view(self, index):
         self.current = index
         self.views[index].reload()
-        self.set_terminal_title("Miru - %s" % self.views[index].title)
+        set_terminal_title("Miru - {}".format(self.views[index].title))
         if self.frame:
             self.frame.set_body(self.views[index])
         else:
@@ -115,14 +119,12 @@ class MainWindow:
     def displaying_dialog(self):
         return isinstance(self.frame.get_body(), AddSeriesDialog)
 
-    def set_terminal_title(self, title):
-        sys.stdout.write("\x1b]2;%s\x07" % title)
-
     def main(self):
-        self.loop = urwid.MainLoop(
-            self.frame, self.palette, unhandled_input=self.unhandled_input
-        )
         self.loop.run()
+
+
+def set_terminal_title(title):
+    sys.stdout.write("\x1b]2;{}\x07".format(title))
 
 
 class View(urwid.WidgetWrap):
@@ -130,13 +132,16 @@ class View(urwid.WidgetWrap):
 
     _order_by_active = False
 
-    def __init__(self, title, attr, status, session, filter):
+    def __init__(self, title, attr, status, session, filter_):
         self.title = title
         self.attr = attr
         self.status = status
         self.session = session
-        self.filter = filter
-        self.walker = SeriesWalker(session, filter)
+        self.filter = filter_
+        self.header = None
+        self.body = None
+        self.footer = None
+        self.walker = SeriesWalker(session, filter_)
         urwid.connect_signal(self.walker, "series_changed", self.redraw_footer)
         urwid.connect_signal(self.walker, "marking_activated", self.marking_activated)
         urwid.connect_signal(self.walker, "marking_deactivated", self.redraw_footer)
@@ -146,9 +151,7 @@ class View(urwid.WidgetWrap):
         )
         self.table = SeriesTable(self.walker)
         self.setup_widgets()
-        super().__init__(
-            urwid.Frame(self.body, self.header, self.footer)
-        )
+        super().__init__(urwid.Frame(self.body, self.header, self.footer))
         self.reload()
 
     def marking_activated(self):
@@ -198,8 +201,8 @@ class View(urwid.WidgetWrap):
         self.redraw_footer()
         if key in keys.keys():
             urwid.emit_signal(self, "ordering_changed", keys[key])
-        else:
-            return key
+            return None
+        return key
 
     def redraw_footer(self):
         self._w.set_focus("body")
@@ -209,11 +212,11 @@ class View(urwid.WidgetWrap):
     def keypress(self, size, key):
         if self._order_by_active:
             return self.handle_order_by(key)
-        elif key == "o":
+        if key == "o":
             self._order_by_active = True
             self.order_by_activated()
-        else:
-            return self._w.keypress(size, key)
+            return None
+        return self._w.keypress(size, key)
 
     def show_input(self, widget, callback, *args):
         def wrapper(*signal_args):
@@ -228,7 +231,7 @@ class View(urwid.WidgetWrap):
 
     def handle_delete(self, series):
         self.show_input(
-            Prompt('Do you really want to delete "%s" [y/N]?: ' % series.name),
+            Prompt('Do you really want to delete "{}" [y/N]?: '.format(series.name)),
             self.delete_confirmation,
             series,
         )
@@ -243,7 +246,7 @@ class View(urwid.WidgetWrap):
 
     def handle_set_seen(self, series):
         self.show_input(
-            IntPrompt('Set the number of seen episodes for "%s": ' % series.name),
+            IntPrompt('Set the number of seen episodes for "{}": '.format(series.name)),
             self.set_seen_confirmation,
             series,
         )
@@ -285,7 +288,8 @@ class View(urwid.WidgetWrap):
     def setup_footer(self):
         self.footer = urwid.AttrWrap(
             urwid.Text(
-                "Total of {} seen episodes".format(self.walker.total_seen_episodes), "center"
+                "Total of {} seen episodes".format(self.walker.total_seen_episodes),
+                "center",
             ),
             self.attr,
         )
@@ -323,9 +327,9 @@ class SeriesTable(DataTable):
 
 
 class SeriesWalker:
-    def __init__(self, session, filter):
+    def __init__(self, session, filter_):
         self.session = session
-        self.filter = filter
+        self.filter = filter_
         self.order_by = Series.name
         self.focus = 0
         self.reload()
@@ -358,7 +362,7 @@ class SeriesWalker:
             self.focus = len(self.entries) - 1
 
     def get_focus(self):
-        if len(self.entries) == 0:
+        if not self.entries:
             return (None, None)
         self._clamp_focus()
         return (self.entries[self.focus], self.focus)
@@ -427,7 +431,7 @@ class SeriesEntry(urwid.WidgetWrap):
                     ("weight", 0.2, self.seen),
                     ("weight", 0.2, self.episodes),
                 ]
-            ),
+            )
         )
 
     def selectable(self):
@@ -446,10 +450,10 @@ class SeriesEntry(urwid.WidgetWrap):
             self.series.status = keys[key]
             self.session.commit()
             urwid.emit_signal(self, "series_changed")
-        else:
-            return key
+            return None
+        return key
 
-    def keypress(self, size, key):
+    def keypress(self, _size, key):
         if self._marking_active:
             return self.handle_marking(key)
         if key in ("i", "d"):
@@ -468,6 +472,7 @@ class SeriesEntry(urwid.WidgetWrap):
             urwid.emit_signal(self, "deletion_requested", self.series)
         else:
             return key
+        return None
 
 
 class VimStyleListBox(urwid.ListBox):
@@ -476,25 +481,24 @@ class VimStyleListBox(urwid.ListBox):
     def keypress(self, size, key):
         if key == "k":
             return self._keypress_up(size)
-        elif key == "j":
+        if key == "j":
             return self._keypress_down(size)
-        else:
-            return urwid.ListBox.keypress(self, size, key)
+        return urwid.ListBox.keypress(self, size, key)
 
     def mouse_event(self, size, event, button, col, row, focus):
         if button == 4:  # Scroll wheel up
             self._keypress_up(size)
             return True
-        elif button == 5:  # Scroll wheel down
+        if button == 5:  # Scroll wheel down
             self._keypress_down(size)
             return True
-        else:
-            return False
+        return False
 
 
 class Prompt(urwid.Edit):
     signals = ["input_received", "input_cancelled"]
 
+    # pylint: disable=R0201
     def format(self, string):
         return string
 
@@ -511,8 +515,8 @@ class IntPrompt(Prompt):
     def format(self, string):
         return int(string) if string else 0
 
-    def valid_char(self, char):
-        return len(char) == 1 and char in "0123456789"
+    def valid_char(self, ch):
+        return len(ch) == 1 and ch in "0123456789"
 
 
 class AddSeriesDialog(urwid.Overlay):
@@ -550,7 +554,7 @@ class AddSeriesDialog(urwid.Overlay):
     def select(self):
         self.content.set_focus(self.tab_index[self.selected])
 
-    def add_button_click(self, widget):
+    def add_button_click(self, _widget):
         self.add_series(
             self.name_edit.get_edit_text(), 0, self.episode_edit.get_edit_text()
         )
@@ -562,8 +566,8 @@ class AddSeriesDialog(urwid.Overlay):
             self.select()
         if key == "esc":
             urwid.emit_signal(self, "closed")
-        else:
-            return urwid.Overlay.keypress(self, size, key)
+            return None
+        return urwid.Overlay.keypress(self, size, key)
 
     def add_series(self, name, seen, episodes):
         seen = episodes if self.status == "completed" else seen

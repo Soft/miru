@@ -5,4 +5,5 @@ syntax: glob
 dist/*
 env/*
 .mypy_cache/*
+build/*
 

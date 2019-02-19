@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
+from pathlib import Path
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from textwrap import dedent
 
@@ -22,9 +22,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
 from miru.interface import MainWindow
-from miru.models import Base, Series
+from miru.models import Base
 
-DEFAULT_DATABASE = os.path.expanduser("~/.miru.db")
+DEFAULT_DATABASE = str(Path("~/.miru.db").expanduser())
 
 
 def parse_args():
@@ -67,7 +67,7 @@ def parse_args():
 
 def connect_database(path, memory=False):
     return create_engine(
-        "sqlite:///%s" % (":memory:" if memory else os.path.abspath(path))
+        "sqlite:///%s" % (":memory:" if memory else str(Path(path).absolute()))
     )
 
 
@@ -75,6 +75,7 @@ def main():
     args = parse_args()
     engine = connect_database(args.database, args.memory)
     Base.metadata.create_all(engine)
+    # pylint: disable=C0103
     Session = sessionmaker(engine)
     session = Session()
     MainWindow(session).main()

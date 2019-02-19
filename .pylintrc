@@ -1,0 +1,7 @@
+[MESSAGES CONTROL]
+
+# Disable:
+# - C0111: missing docstring
+# - R0902: too many instance attributes
+# - R0913: too many arguments
+disable = C0111, R0902, R0913
