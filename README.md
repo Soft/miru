@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/Soft/miru.svg?branch=master)](https://travis-ci.org/Soft/miru)
 [![GitHub release](https://img.shields.io/github/release/Soft/miru.svg)](https://github.com/Soft/miru/releases)
+[![PyPI](https://img.shields.io/pypi/v/miru.svg)](https://pypi.org/project/miru/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/miru.svg)](https://pypi.org/project/miru/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 **見る — to watch; to view;**
