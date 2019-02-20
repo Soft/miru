@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 readme = Path(__file__).parent.absolute() / "README.md"
-long_description = readme.read_text()
+long_description = readme.read_text(encoding="utf-8")
 
 setup(
     name="miru",
